@@ -1,25 +1,39 @@
+# 🏰 Fortress // Password Entropy Auditor
+
+> **A scientific password strength analyzer that calculates Shannon Entropy and estimated GPU crack time in real-time.**
+
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![Security](https://img.shields.io/badge/Security-Information%20Theory-red)
+![GUI](https://img.shields.io/badge/UI-CustomTkinter-green)
+
+## 📖 Overview
+
+**Fortress** is not your standard "password checker." Most checkers just look for arbitrary rules (e.g., "Must have 1 number"). Fortress uses **Information Theory** to calculate the mathematical **Entropy (bits)** of your password string.
+
+It features a reactive, modern GUI that updates as you type, providing immediate feedback on how long it would take a modern GPU cracking rig (capable of 100 Billion guesses/second) to brute-force your password.
 
 
-# Password Strength Checker 🔒
+*(Add a screenshot of your tool here)*
 
-A Python-based GUI application that evaluates the strength of passwords in real-time. This tool was developed as part of the **Prodigy InfoTech Cybersecurity Internship (Task 03)**.
+---
 
-It provides instant visual feedback using a graphical meter and checks against standard security criteria.
+## ✨ Key Features
 
-## 🚀 Features
-- **Real-time Analysis:** accurately assesses strength as you type.
-- **Visual Gauge:** A semi-circle meter (0-100%) showing password robustness.
-- **Security Criteria:** Checks for:
-  - Length (8+ characters)
-  - Uppercase & Lowercase letters
-  - Numbers
-  - Special Characters (Symbols)
-- **Show/Hide:** Toggle visibility to view the password you are typing.
-- **Modern UI:** Built with `ttkbootstrap` for a clean, dark-themed cyborg aesthetic.
+* **🧮 Real-Time Entropy Engine:** Calculates `Bits = Length * log2(Pool_Size)` instantly on every keystroke.
+* **⏱️ Crack Time Estimation:** contextualizes the math by estimating time-to-crack against a powerful GPU cluster ($10^{11}$ guesses/sec).
+* **🎨 Reactive Dashboard:** The interface shifts colors (Red $\to$ Yellow $\to$ Green) dynamically based on bit strength.
+* **✅ Live Criteria Checklist:** Visually tracks requirements (Length, Special Chars, Uppercase, etc.).
+* **👁️ Privacy Mode:** Toggle password visibility to audit safely.
 
-## 🛠️ Prerequisites
-You need Python installed, along with the UI library.
+---
 
-1. **Install Dependencies:**
-   ```bash
-   pip install ttkbootstrap
+## 🛠️ Prerequisites & Installation
+
+### 1. Requirements
+* **Python:** 3.8 or higher.
+* **OS:** Windows, macOS, or Linux.
+
+### 2. Install Dependencies
+This project relies on `customtkinter` for its modern UI.
+```bash
+pip install customtkinter
