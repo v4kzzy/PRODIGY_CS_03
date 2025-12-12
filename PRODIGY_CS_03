@@ -1,114 +1,140 @@
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 import re
+from tkinter import Canvas
 
-def check_strength(password):
-    """
-    Analyzes the password and returns a score (0-100) and a label.
-    """
-    score = 0
-    feedback = []
+class PasswordStrengthApp(tb.Window):
+    def __init__(self):
+        super().__init__(themename="cyborg")
+        self.title("ShieldPass Pro")
+        self.geometry("500x650")
+        
+        # --- UI LAYOUT ---
+        self.create_header()
+        self.create_meter_section()
+        self.create_input_section()
+        self.create_checklist_section()
 
-    # 1. Length Check
-    if len(password) == 0:
-        return 0, "Empty", "secondary"
-    
-    if len(password) >= 8:
-        score += 20
-    else:
-        feedback.append("Too short")
+    def create_header(self):
+        """Top title section"""
+        header_frame = tb.Frame(self)
+        header_frame.pack(pady=20)
+        
+        # We use a Label with a unicode lock icon as a simple graphical element
+        self.lbl_icon = tb.Label(header_frame, text="🔓", font=("Segoe UI Emoji", 40), bootstyle="danger")
+        self.lbl_icon.pack()
+        
+        title = tb.Label(header_frame, text="Security Audit", font=("Helvetica", 16, "bold"), bootstyle="light")
+        title.pack()
 
-    # 2. Uppercase Check
-    if re.search(r"[A-Z]", password):
-        score += 20
-    else:
-        feedback.append("No uppercase")
+    def create_meter_section(self):
+        """The visual gauge"""
+        self.meter = tb.Meter(
+            self,
+            bootstyle="danger",
+            subtext="Security Level",
+            interactive=False,
+            textright="%",
+            metertype="full", # Full circle looks more like a shield
+            stripethickness=15,
+            amountused=0,
+            subtextfont=("Helvetica", 10),
+            textfont=("Helvetica", 20, "bold")
+        )
+        self.meter.pack(pady=10)
 
-    # 3. Lowercase Check
-    if re.search(r"[a-z]", password):
-        score += 20
-    else:
-        feedback.append("No lowercase")
+    def create_input_section(self):
+        """Password input area"""
+        input_frame = tb.Frame(self, padding=20)
+        input_frame.pack(fill=X)
 
-    # 4. Number Check
-    if re.search(r"\d", password):
-        score += 20
-    else:
-        feedback.append("No numbers")
+        self.entry_pass = tb.Entry(input_frame, show="•", font=("Consolas", 14), bootstyle="dark")
+        self.entry_pass.pack(fill=X, pady=5)
+        self.entry_pass.bind("<KeyRelease>", self.check_strength)
 
-    # 5. Special Character Check
-    if re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
-        score += 20
-    else:
-        feedback.append("No special chars")
+        # Toggle Show/Hide
+        self.var_show = tb.BooleanVar()
+        self.chk_show = tb.Checkbutton(
+            input_frame, 
+            text="Reveal Password", 
+            variable=self.var_show, 
+            command=self.toggle_show, 
+            bootstyle="round-toggle-info"
+        )
+        self.chk_show.pack(pady=10, anchor="e")
 
-    # Determine Status
-    if score < 40:
-        status = "Weak"
-        color = "danger"  # Red
-    elif score < 80:
-        status = "Moderate"
-        color = "warning" # Orange
-    else:
-        status = "Strong"
-        color = "success" # Green
+    def create_checklist_section(self):
+        """Visual checklist for requirements"""
+        self.check_frame = tb.Labelframe(self, text=" Security Requirements ", padding=15, bootstyle="secondary")
+        self.check_frame.pack(fill=X, padx=20, pady=10)
 
-    return score, status, color
+        # Create labels for each rule
+        self.rules = {
+            "length": tb.Label(self.check_frame, text="○ At least 8 characters", bootstyle="secondary"),
+            "upper": tb.Label(self.check_frame, text="○ Uppercase letter (A-Z)", bootstyle="secondary"),
+            "lower": tb.Label(self.check_frame, text="○ Lowercase letter (a-z)", bootstyle="secondary"),
+            "digit": tb.Label(self.check_frame, text="○ Number (0-9)", bootstyle="secondary"),
+            "special": tb.Label(self.check_frame, text="○ Special Symbol (!@#$)", bootstyle="secondary"),
+        }
+        
+        for lbl in self.rules.values():
+            lbl.pack(anchor="w", pady=2)
 
-def on_password_change(event):
-    """
-    Called every time the user types a character.
-    """
-    password = entry_pass.get()
-    score, status, color = check_strength(password)
+    # --- LOGIC ---
 
-    # Update the Meter (Gauge)
-    meter.configure(amountused=score, bootstyle=color)
-    
-    # Update the Text Label
-    lbl_status.config(text=f"Status: {status}", bootstyle=color)
+    def toggle_show(self):
+        if self.var_show.get():
+            self.entry_pass.config(show="")
+        else:
+            self.entry_pass.config(show="•")
 
-# --- GUI SETUP ---
-app = tb.Window(themename="cyborg")
-app.title("Password Strength Tool")
-app.geometry("400x450")
+    def update_rule(self, key, satisfied):
+        """Updates the color/icon of a checklist item"""
+        lbl = self.rules[key]
+        if satisfied:
+            lbl.config(text="✓ " + lbl.cget("text")[2:], bootstyle="success")
+        else:
+            lbl.config(text="○ " + lbl.cget("text")[2:], bootstyle="secondary")
 
-lbl_title = tb.Label(app, text="Password Checker", font=("Helvetica", 18, "bold"), bootstyle="info")
-lbl_title.pack(pady=20)
+    def check_strength(self, event):
+        password = self.entry_pass.get()
+        score = 0
+        
+        # 1. Check Rules
+        has_len = len(password) >= 8
+        has_upper = bool(re.search(r"[A-Z]", password))
+        has_lower = bool(re.search(r"[a-z]", password))
+        has_digit = bool(re.search(r"\d", password))
+        has_spec = bool(re.search(r"[!@#$%^&*(),.?\":{}|<>]", password))
 
-# The Meter (Visual Gauge)
-meter = tb.Meter(
-    app,
-    bootstyle="danger",
-    subtext="Strength",
-    interactive=False,
-    textright="%",
-    metertype="semi",  # Semi-circle gauge
-    stripethickness=10,
-    amountused=0
-)
-meter.pack(pady=20)
+        # Update Checklist UI
+        self.update_rule("length", has_len)
+        self.update_rule("upper", has_upper)
+        self.update_rule("lower", has_lower)
+        self.update_rule("digit", has_digit)
+        self.update_rule("special", has_spec)
 
-# Input Field
-entry_pass = tb.Entry(app, show="*", font=("Helvetica", 12))
-entry_pass.pack(pady=10, padx=50, fill=X)
+        # Calculate Score
+        if has_len: score += 20
+        if has_upper: score += 20
+        if has_lower: score += 20
+        if has_digit: score += 20
+        if has_spec: score += 20
 
-# Bind the typing event to our function
-entry_pass.bind("<KeyRelease>", on_password_change)
+        # Update Meter & Icon
+        if score < 40:
+            color = "danger"
+            icon = "🔓" # Unlocked
+        elif score < 80:
+            color = "warning"
+            icon = "🔐" # Semi-locked
+        else:
+            color = "success"
+            icon = "🔒" # Locked/Secure
 
-# Status Label
-lbl_status = tb.Label(app, text="Status: Empty", font=("Helvetica", 12))
-lbl_status.pack(pady=10)
+        self.meter.configure(amountused=score, bootstyle=color)
+        self.lbl_icon.config(text=icon, bootstyle=color)
 
-# Checkbox to show/hide password
-var_show = tb.BooleanVar()
-def toggle_show():
-    if var_show.get():
-        entry_pass.config(show="")
-    else:
-        entry_pass.config(show="*")
-
-chk_show = tb.Checkbutton(app, text="Show Password", variable=var_show, command=toggle_show, bootstyle="round-toggle")
-chk_show.pack(pady=10)
-
-app.mainloop()
+if __name__ == "__main__":
+    app = PasswordStrengthApp()
+    app.mainloop()
