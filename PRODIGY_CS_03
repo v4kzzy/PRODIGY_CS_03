@@ -1,140 +1,143 @@
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
-import re
-from tkinter import Canvas
+import tkinter as tk
 
-class PasswordStrengthApp(tb.Window):
-    def __init__(self):
-        super().__init__(themename="cyborg")
-        self.title("ShieldPass Pro")
-        self.geometry("500x650")
-        
-        # --- UI LAYOUT ---
-        self.create_header()
-        self.create_meter_section()
-        self.create_input_section()
-        self.create_checklist_section()
+# --- LOGIC FUNCTIONS ---
 
-    def create_header(self):
-        """Top title section"""
-        header_frame = tb.Frame(self)
-        header_frame.pack(pady=20)
-        
-        # We use a Label with a unicode lock icon as a simple graphical element
-        self.lbl_icon = tb.Label(header_frame, text="🔓", font=("Segoe UI Emoji", 40), bootstyle="danger")
-        self.lbl_icon.pack()
-        
-        title = tb.Label(header_frame, text="Security Audit", font=("Helvetica", 16, "bold"), bootstyle="light")
-        title.pack()
+def caesar_cipher(text, shift, mode):
+    result = ""
+    # If decrypting, we simply reverse the shift
+    if mode == "decrypt":
+        shift = -shift
 
-    def create_meter_section(self):
-        """The visual gauge"""
-        self.meter = tb.Meter(
-            self,
-            bootstyle="danger",
-            subtext="Security Level",
-            interactive=False,
-            textright="%",
-            metertype="full", # Full circle looks more like a shield
-            stripethickness=15,
-            amountused=0,
-            subtextfont=("Helvetica", 10),
-            textfont=("Helvetica", 20, "bold")
-        )
-        self.meter.pack(pady=10)
-
-    def create_input_section(self):
-        """Password input area"""
-        input_frame = tb.Frame(self, padding=20)
-        input_frame.pack(fill=X)
-
-        self.entry_pass = tb.Entry(input_frame, show="•", font=("Consolas", 14), bootstyle="dark")
-        self.entry_pass.pack(fill=X, pady=5)
-        self.entry_pass.bind("<KeyRelease>", self.check_strength)
-
-        # Toggle Show/Hide
-        self.var_show = tb.BooleanVar()
-        self.chk_show = tb.Checkbutton(
-            input_frame, 
-            text="Reveal Password", 
-            variable=self.var_show, 
-            command=self.toggle_show, 
-            bootstyle="round-toggle-info"
-        )
-        self.chk_show.pack(pady=10, anchor="e")
-
-    def create_checklist_section(self):
-        """Visual checklist for requirements"""
-        self.check_frame = tb.Labelframe(self, text=" Security Requirements ", padding=15, bootstyle="secondary")
-        self.check_frame.pack(fill=X, padx=20, pady=10)
-
-        # Create labels for each rule
-        self.rules = {
-            "length": tb.Label(self.check_frame, text="○ At least 8 characters", bootstyle="secondary"),
-            "upper": tb.Label(self.check_frame, text="○ Uppercase letter (A-Z)", bootstyle="secondary"),
-            "lower": tb.Label(self.check_frame, text="○ Lowercase letter (a-z)", bootstyle="secondary"),
-            "digit": tb.Label(self.check_frame, text="○ Number (0-9)", bootstyle="secondary"),
-            "special": tb.Label(self.check_frame, text="○ Special Symbol (!@#$)", bootstyle="secondary"),
-        }
-        
-        for lbl in self.rules.values():
-            lbl.pack(anchor="w", pady=2)
-
-    # --- LOGIC ---
-
-    def toggle_show(self):
-        if self.var_show.get():
-            self.entry_pass.config(show="")
+    for char in text:
+        if char.isalpha():
+            # Determine if uppercase or lowercase base
+            base = ord('A') if char.isupper() else ord('a')
+            
+            # The Math: (Character - Base + Shift) % 26 + Base
+            # This wraps the alphabet around (z becomes a)
+            new_char = chr((ord(char) - base + shift) % 26 + base)
+            result += new_char
         else:
-            self.entry_pass.config(show="•")
+            # Keep numbers and symbols the same
+            result += char
+    return result
 
-    def update_rule(self, key, satisfied):
-        """Updates the color/icon of a checklist item"""
-        lbl = self.rules[key]
-        if satisfied:
-            lbl.config(text="✓ " + lbl.cget("text")[2:], bootstyle="success")
-        else:
-            lbl.config(text="○ " + lbl.cget("text")[2:], bootstyle="secondary")
+def update_ui(event=None):
+    """Refreshes the output whenever you type or slide"""
+    text = entry_text.get("1.0", "end-1c") # Get text from input box
+    shift = shift_var.get()                # Get number from slider
+    mode = mode_var.get()                  # Get "encrypt" or "decrypt"
 
-    def check_strength(self, event):
-        password = self.entry_pass.get()
-        score = 0
-        
-        # 1. Check Rules
-        has_len = len(password) >= 8
-        has_upper = bool(re.search(r"[A-Z]", password))
-        has_lower = bool(re.search(r"[a-z]", password))
-        has_digit = bool(re.search(r"\d", password))
-        has_spec = bool(re.search(r"[!@#$%^&*(),.?\":{}|<>]", password))
+    # Update the label next to slider
+    lbl_shift_num.config(text=str(shift))
 
-        # Update Checklist UI
-        self.update_rule("length", has_len)
-        self.update_rule("upper", has_upper)
-        self.update_rule("lower", has_lower)
-        self.update_rule("digit", has_digit)
-        self.update_rule("special", has_spec)
+    # Calculate result
+    encrypted_text = caesar_cipher(text, shift, mode)
+    
+    # Update Output Box
+    output_text.config(state="normal")     # Unlock to edit
+    output_text.delete("1.0", "end")       # Clear old text
+    output_text.insert("1.0", encrypted_text) # Insert new text
+    output_text.config(state="disabled")   # Lock again (Read-only)
 
-        # Calculate Score
-        if has_len: score += 20
-        if has_upper: score += 20
-        if has_lower: score += 20
-        if has_digit: score += 20
-        if has_spec: score += 20
+def copy_to_clipboard():
+    result = output_text.get("1.0", "end-1c")
+    app.clipboard_clear()
+    app.clipboard_append(result)
+    # Flash the button to show it worked
+    btn_copy.config(text="Copied!", bootstyle="success")
+    app.after(1000, lambda: btn_copy.config(text="Copy Result", bootstyle="info-outline"))
 
-        # Update Meter & Icon
-        if score < 40:
-            color = "danger"
-            icon = "🔓" # Unlocked
-        elif score < 80:
-            color = "warning"
-            icon = "🔐" # Semi-locked
-        else:
-            color = "success"
-            icon = "🔒" # Locked/Secure
+def try_all_shifts():
+    """Opens a new window to show all 26 possibilities"""
+    bf_window = tb.Toplevel(app)
+    bf_window.title("Brute Force Cracker")
+    bf_window.geometry("500x600")
+    
+    lbl = tb.Label(bf_window, text="Trying all 26 keys...", font=("Helvetica", 12), bootstyle="warning")
+    lbl.pack(pady=10)
 
-        self.meter.configure(amountused=score, bootstyle=color)
-        self.lbl_icon.config(text=icon, bootstyle=color)
+    # Scrollable text area
+    txt = tb.Text(bf_window, font=("Consolas", 10))
+    txt.pack(fill=BOTH, expand=YES, padx=10, pady=10)
+    
+    text_to_crack = entry_text.get("1.0", "end-1c")
+    
+    for s in range(26):
+        # Shift backwards to decrypt
+        attempt = caesar_cipher(text_to_crack, s, "decrypt")
+        txt.insert("end", f"KEY {s:<2} :  {attempt}\n")
 
-if __name__ == "__main__":
-    app = PasswordStrengthApp()
-    app.mainloop()
+def clear_all():
+    entry_text.delete("1.0", "end")
+    shift_var.set(3)
+    update_ui()
+
+# --- UI SETUP ---
+
+app = tb.Window(themename="cyborg")
+app.title("Caesar Cipher Pro")
+app.geometry("600x680")
+
+# 1. Header
+header_frame = tb.Frame(app)
+header_frame.pack(pady=20)
+
+tb.Label(header_frame, text="🔐 CAESAR CIPHER", font=("Helvetica", 22, "bold"), bootstyle="info").pack()
+tb.Label(header_frame, text="Simple Text Encryption", font=("Helvetica", 10), bootstyle="secondary").pack()
+
+# 2. Input Section
+input_frame = tb.Labelframe(app, text=" Input Message ", padding=15, bootstyle="primary")
+input_frame.pack(fill=X, padx=20, pady=10)
+
+entry_text = tb.Text(input_frame, height=3, font=("Consolas", 11), wrap="word", bd=0)
+entry_text.pack(fill=X)
+entry_text.bind("<KeyRelease>", update_ui) # Run update_ui whenever a key is pressed
+
+# 3. Controls (Slider & Mode)
+control_frame = tb.Frame(app)
+control_frame.pack(fill=X, padx=20)
+
+# Slider Box
+shift_frame = tb.Labelframe(control_frame, text=" Shift Key ", padding=10, bootstyle="warning")
+shift_frame.pack(side=LEFT, fill=BOTH, expand=YES, padx=(0, 10))
+
+lbl_shift_num = tb.Label(shift_frame, text="3", font=("Helvetica", 18, "bold"), bootstyle="warning")
+lbl_shift_num.pack(side=RIGHT, padx=10)
+
+shift_var = tk.IntVar(value=3)
+shift_scale = tb.Scale(shift_frame, from_=0, to=25, variable=shift_var, command=lambda x: update_ui(), bootstyle="warning")
+shift_scale.pack(side=LEFT, fill=X, expand=YES)
+
+# Mode Box
+mode_frame = tb.Labelframe(control_frame, text=" Mode ", padding=10, bootstyle="success")
+mode_frame.pack(side=RIGHT, fill=BOTH)
+
+mode_var = tk.StringVar(value="encrypt")
+chk_mode = tb.Checkbutton(mode_frame, text="Decrypt Mode", variable=mode_var, onvalue="decrypt", offvalue="encrypt", bootstyle="success-round-toggle", command=update_ui)
+chk_mode.pack(padx=10, pady=5)
+
+# 4. Output Section
+output_frame = tb.Labelframe(app, text=" Result ", padding=15, bootstyle="info")
+output_frame.pack(fill=BOTH, expand=YES, padx=20, pady=10)
+
+output_text = tb.Text(output_frame, height=4, font=("Consolas", 12, "bold"), wrap="word", state="disabled", bg="#222", fg="#00bc8c")
+output_text.pack(fill=BOTH, expand=YES)
+
+# 5. Buttons
+btn_frame = tb.Frame(app, padding=20)
+btn_frame.pack(fill=X, side=BOTTOM)
+
+btn_copy = tb.Button(btn_frame, text="Copy Result", bootstyle="info-outline", command=copy_to_clipboard)
+btn_copy.pack(side=LEFT, fill=X, expand=YES, padx=5)
+
+btn_brute = tb.Button(btn_frame, text="Crack (Try All)", bootstyle="warning-outline", command=try_all_shifts)
+btn_brute.pack(side=LEFT, fill=X, expand=YES, padx=5)
+
+btn_clear = tb.Button(btn_frame, text="Reset", bootstyle="danger-outline", command=clear_all)
+btn_clear.pack(side=LEFT, fill=X, expand=YES, padx=5)
+
+# Start the App
+app.mainloop()
