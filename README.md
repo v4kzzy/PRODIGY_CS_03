@@ -1,19 +1,25 @@
 # Cybersecurity Tools Suite 🛡️
 
-This repository contains two Python-based cybersecurity tools developed to demonstrate encryption algorithms and password security assessment. Both tools feature a modern Graphical User Interface (GUI) built with `ttkbootstrap`.
+# Password Strength Checker 🔒
 
-## 📂 Included Tools
+A Python-based GUI application that evaluates the strength of passwords in real-time. This tool was developed as part of the **Prodigy InfoTech Cybersecurity Internship (Task 03)**.
 
-### 1. Image Encryption Tool 🔐
-A tool that encrypts and decrypts images using pixel manipulation.
-- **Method:** Uses bitwise XOR operations combined with RGB channel swapping.
-- **Key Feature:** Supports text-based keys (e.g., "labubu") by converting ASCII values to a numeric key.
-- **Modes:** Encrypt (scrambles the image) and Decrypt (restores the original).
+It provides instant visual feedback using a graphical meter and checks against standard security criteria.
 
-### 2. Password Strength Checker 🔑
-A real-time password assessment tool.
-- **Visual Feedback:** Features a dynamic gauge (meter) that fills up as you type.
-- **Criteria:** Checks for length (8+), uppercase, lowercase, numbers, and special characters.
-- **Scoring:** Gives a score from 0-100% with color-coded feedback (Red/Orange/Green).
+## 🚀 Features
+- **Real-time Analysis:** accurately assesses strength as you type.
+- **Visual Gauge:** A semi-circle meter (0-100%) showing password robustness.
+- **Security Criteria:** Checks for:
+  - Length (8+ characters)
+  - Uppercase & Lowercase letters
+  - Numbers
+  - Special Characters (Symbols)
+- **Show/Hide:** Toggle visibility to view the password you are typing.
+- **Modern UI:** Built with `ttkbootstrap` for a clean, dark-themed cyborg aesthetic.
 
----
+## 🛠️ Prerequisites
+You need Python installed, along with the UI library.
+
+1. **Install Dependencies:**
+   ```bash
+   pip install ttkbootstrap
